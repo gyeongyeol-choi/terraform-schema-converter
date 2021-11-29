@@ -1,0 +1,16 @@
+<!doctype html>
+<html>
+    <head>
+        <base href="/" />
+        <script type="text/javascript" src="myscript.js"></script>
+        <title>Load JSON</title>
+    </head>
+    <body>
+        <script>
+            readJSON("./json/terraform_schema.json", function(text){
+                var Data = JSON.parse(text);
+                console.log(Data);
+            });
+        </script>
+    </body>
+</html>

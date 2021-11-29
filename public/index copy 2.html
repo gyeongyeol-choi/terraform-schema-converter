@@ -1,0 +1,175 @@
+<!doctype html>
+<html>
+    <head>
+        <title>Load JSON</title>
+        <script type="text/javascript" src="myscript.js"></script>
+    </head>
+    <body>
+        <script>
+            var Request = function() {  
+                this.getParameter = function(name) {  
+                    var rtnval = '';  
+                    var nowAddress = unescape(location.href);  
+                    var parameters = (nowAddress.slice(nowAddress.indexOf('?') + 1,  
+                            nowAddress.length)).split('&');  
+                    for (var i = 0; i < parameters.length; i++) {  
+                        var varName = parameters[i].split('=')[0];  
+                        if (varName.toUpperCase() == name.toUpperCase()) {  
+                            rtnval = parameters[i].split('=')[1];  
+                            break;  
+                        }  
+                    }  
+                    return rtnval;  
+                }  
+            }  
+            var request = new Request(); 
+
+            readJSON("./json/terraform_schema.json", function(text){
+                var Data = JSON.parse(text);
+
+                // var param1 = "aws"; // provider
+                //var param2 = "resource" // type (provider / resource / datasource)
+                // var param3 = "aws_instance" // resource or datasource name
+
+                //var param1 = request.getParameter('param1');
+                //var param2 = request.getParameter('param2');
+                //var param3 = request.getParameter('param3');
+                var typeList = ['provider', 'resource', 'datasource']
+                var schemaList;
+                var schemaArray = new Array();
+                var schemaMap = new Map();
+                var schemaData;
+                var tmpPath;
+
+                for (const type of typeList) {
+                    if (type == "provider") {
+                        schemaData = Data.provider_schemas['aws'].provider.block;
+
+                        renameKey(schemaData, 'attributes', 'properties');
+                        mergeKey(schemaData, 'block_types', 'properties');
+
+                        Object.keys(schemaData.properties).forEach(function(k){
+                            //console.log(schemaData.properties[k]);
+
+                            if (schemaData.properties[k].type == "bool") {
+                                schemaData.properties[k].type = "boolean";
+                            } else if (Array.isArray(schemaData.properties[k].type)) {
+                                if (schemaData.properties[k].type[0] == "list") {
+                                    schemaData.properties[k].type[0] = "array";
+                                } else if (schemaData.properties[k].type[0] == "set" || schemaData.properties[k].type[0] == "map") {
+                                    schemaData.properties[k].type = "object";
+                                }
+                            }
+                            
+                            if (schemaData.properties[k].hasOwnProperty('block') && schemaData.properties[k].block.hasOwnProperty('attributes')) {
+                                /*
+                                console.log(schemaData.properties[k]);
+                                console.log(k);
+                                */
+                                replaceKey(schemaData.properties[k], 'block', 'attributes', 'properties');
+
+                                //console.log(schemaData.properties[k].properties);
+                                Object.keys(schemaData.properties[k].properties).forEach(function(i){
+                                    if (schemaData.properties[k].properties[i].type == "bool") {
+                                        schemaData.properties[k].properties[i].type = "boolean";
+                                    } else if (Array.isArray(schemaData.properties[k].properties[i].type)) {
+                                        if (schemaData.properties[k].properties[i].type[0] == "list") {
+                                            schemaData.properties[k].properties[i].type[0] = "array";
+                                        } else if (schemaData.properties[k].properties[i].type[0] == "set" || schemaData.properties[k].properties[i].type[0] == "map") {
+                                            schemaData.properties[k].properties[i].type = "object";
+                                        }
+                                    }
+                                })
+                            }
+
+                        })
+
+                        schemaData.title = "provider-aws"
+                        schemaArray.push(schemaData);
+                        schemaMap.set(schemaData.title, schemaData);
+
+
+                    } else {
+                        if (type == "resource") {
+                            schemaList = Object.getOwnPropertyNames(Data.provider_schemas['aws'].resource_schemas);
+                            tmpPath = Data.provider_schemas['aws'].resource_schemas;
+                        } else if (type == "datasource") {
+                            schemaList = Object.getOwnPropertyNames(Data.provider_schemas['aws'].data_source_schemas);
+                            tmpPath = Data.provider_schemas['aws'].data_source_schemas;
+                        }
+
+
+                        for (const key of schemaList) {
+                            //console.log(key);
+                            schemaData = tmpPath[key].block;
+                            //schemaData = Data.provider_schemas['aws'].resource_schemas[key].block;
+
+        /*
+                        if (Array.isArray(schemaData)) {
+                            alert(schemaData);
+                            document.write(schemaData);
+                            console.log(schemaData);
+                        } else {
+                            */
+                            renameKey(schemaData, 'attributes', 'properties');
+                            mergeKey(schemaData, 'block_types', 'properties');
+
+                            Object.keys(schemaData.properties).forEach(function(k){
+                                //console.log(schemaData.properties[k]);
+
+                                if (schemaData.properties[k].type == "bool") {
+                                    schemaData.properties[k].type = "boolean";
+                                } else if (Array.isArray(schemaData.properties[k].type)) {
+                                    if (schemaData.properties[k].type[0] == "list") {
+                                        schemaData.properties[k].type[0] = "array";
+                                    } else if (schemaData.properties[k].type[0] == "set" || schemaData.properties[k].type[0] == "map") {
+                                        schemaData.properties[k].type = "object";
+                                    }
+                                }
+                                
+                                if (schemaData.properties[k].hasOwnProperty('block') && schemaData.properties[k].block.hasOwnProperty('attributes')) {
+                                    /*
+                                    console.log(schemaData.properties[k]);
+                                    console.log(k);
+                                    */
+                                    replaceKey(schemaData.properties[k], 'block', 'attributes', 'properties');
+
+                                    //console.log(schemaData.properties[k].properties);
+                                    Object.keys(schemaData.properties[k].properties).forEach(function(i){
+                                        if (schemaData.properties[k].properties[i].type == "bool") {
+                                            schemaData.properties[k].properties[i].type = "boolean";
+                                        } else if (Array.isArray(schemaData.properties[k].properties[i].type)) {
+                                            if (schemaData.properties[k].properties[i].type[0] == "list") {
+                                                schemaData.properties[k].properties[i].type[0] = "array";
+                                            } else if (schemaData.properties[k].properties[i].type[0] == "set" || schemaData.properties[k].properties[i].type[0] == "map") {
+                                                schemaData.properties[k].properties[i].type = "object";
+                                            }
+                                        }
+                                    })
+                                }
+                            })   
+                            schemaData.title = type + "-" + key;
+                            schemaArray.push(schemaData);
+                            schemaMap.set(schemaData.title, schemaData);
+                        }
+                    /*
+                    alert(JSON.stringify(schemaData, null, 2));
+                    document.write(JSON.stringify(schemaData));
+                    console.log(schemaData);
+                    */
+                    }
+
+            }
+            /*
+                alert(JSON.stringify(schemaArray, null, 2));
+                document.write(JSON.stringify(schemaArray));
+                console.log(schemaArray);
+            */
+                alert(JSON.stringify(schemaMap, null, 2));
+                document.write(JSON.stringify(schemaMap));
+                console.log(schemaMap);
+            });
+
+        </script>
+    </body>
+</html>
