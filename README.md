@@ -10,7 +10,7 @@
 
 ## Step 2. npm server 기동
 * 해당 루트 디렉토리에서 npm server 프로세스를 실행
-![image](figure/1_npm.png)
+* ![image](figure/1_npm.png)
 
 ## Step 3. 파싱 데이터 확인
 * 브라우저 상에서 해당 서버로 접근하여 파싱된 데이터 확인
